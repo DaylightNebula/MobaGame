@@ -1,16 +1,11 @@
 package daylightnebula.mobagame.networking.base.server
 
-import daylightnebula.mobagame.network.LoginPacket
-import daylightnebula.mobagame.network.QueuePacket
-import daylightnebula.mobagame.network.QueueResponse
-import daylightnebula.mobagame.network.ServerPacket
+import daylightnebula.mobagame.network.*
 import daylightnebula.mobagame.network.datatypes.MatchType
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.net.ConnectException
 import java.net.ServerSocket
 import kotlin.random.Random
-import kotlin.system.exitProcess
 
 class Server {
 
@@ -20,7 +15,10 @@ class Server {
         val connections = mutableListOf<Connection>()
     }
 
+    // match stuff
+    val playersPerMatch = 1
     val queues = hashMapOf<MatchType, MutableList<Connection>>()
+    val activeMatches = mutableListOf<Match>()
 
     fun start() {
         server = this
@@ -33,7 +31,33 @@ class Server {
             queues[it] = mutableListOf()
         }
 
-        while (true) {}
+        while (true) {
+            // remove all matches that are closed from active
+            activeMatches.removeIf { it.matchState == Match.MatchState.CLOSED }
+
+            // loop through queues and check if a match needs to be created
+            queues.forEach { entry ->
+                // break down entry
+                val matchType = entry.key
+                val list = entry.value
+
+                // while there is enough players to start a match, put them in a match
+                while (list.size >= playersPerMatch) {
+                    // create match
+                    val match = Match(matchType)
+
+                    // remove the connection from the queue list and add it to the matches' connection list
+                    for (i in 0 until playersPerMatch) {
+                        val conn = list.removeAt(i)
+                        match.connections.add(conn)
+                    }
+
+                    // start the match
+                    activeMatches.add(match)
+                    match.start()
+                }
+            }
+        }
     }
 
     fun onConnect(conn: Connection) {
@@ -41,7 +65,10 @@ class Server {
     }
 
     fun processPacket(conn: Connection, packet: ServerPacket) {
-        if (packet is QueuePacket) {
+        if (packet is MatchPacket) {
+            val match = activeMatches.firstOrNull { it.matchID == packet.matchID } ?: return
+            match.processPacket(packet)
+        } else if (packet is QueuePacket) {
             // when asked to join a queue, check if they can join that queue.  If they can, add them.
             if (packet.matchType.active) {
                 queues[packet.matchType]?.add(conn)
@@ -59,7 +86,7 @@ class Server {
                 val outStream = ObjectOutputStream(socket.getOutputStream())
                 val inStream = ObjectInputStream(socket.getInputStream())
 
-                // create  and start connection
+                // create connection and start thread // todo find a way to group threads so we can support millions of players instead of thousands
                 val conn = Connection(
                     Random.nextLong(),
                     socket,

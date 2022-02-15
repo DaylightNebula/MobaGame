@@ -3,10 +3,7 @@ package daylightnebula.mobagamegdx.scenes
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputProcessor
-import daylightnebula.mobagame.network.LoginPacket
-import daylightnebula.mobagame.network.QueuePacket
-import daylightnebula.mobagame.network.QueueResponse
-import daylightnebula.mobagame.network.ServerPacket
+import daylightnebula.mobagame.network.*
 import daylightnebula.mobagame.network.datatypes.MatchType
 import daylightnebula.mobagamegdx.MobaGame
 import kotlin.system.exitProcess
@@ -33,15 +30,16 @@ class MenuScene: Scene() {
             if (serverPacket.success) println("In queue")
             else println("Couldn't join queue")
             return true
+        } else if (serverPacket is JoinMatchPacket) {
+            println("Joined match")
+            return true
         } else
             return false
     }
 
     class MenuInputProcessor: InputProcessor {
         override fun keyUp(keycode: Int): Boolean {
-            println("IP Key Up")
             if (keycode == Input.Keys.A) {
-                println("Sending queue packet")
                 MobaGame.game.connection.sendPacket(
                     QueuePacket(MatchType.NORMALS)
                 )

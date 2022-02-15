@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Quaternion
 import com.badlogic.gdx.math.Vector3
 import daylightnebula.mobagame.network.*
 import daylightnebula.mobagamegdx.Constants
+import daylightnebula.mobagamegdx.MobaGame
 import daylightnebula.mobagamegdx.physics.PhysicsWorld
 import daylightnebula.mobagamegdx.players.Player
 import daylightnebula.mobagamegdx.scenes.GameScene
@@ -41,7 +42,7 @@ class PeerConnection(val address: String, val port: Int): Thread() {
         // send test packet if client
         if (isClient()) {
             val position = GameScene.game.myPlayer.modelInstance.transform.getTranslation(Vector3())
-            sendPacket(PeerInitPlayerPacket(Random.nextLong(), position.x, position.y, position.z))
+            sendPacket(PeerInitPlayerPacket(MobaGame.game.userID, position.x, position.y, position.z))
         }
         ready = true
 
@@ -88,7 +89,7 @@ class PeerConnection(val address: String, val port: Int): Thread() {
 
             if (isServer()) {
                 val position = GameScene.game.myPlayer.modelInstance.transform.getTranslation(Vector3())
-                sendPacket(PeerInitPlayerPacket(Random.nextLong(), position.x, position.y, position.z))
+                sendPacket(PeerInitPlayerPacket(MobaGame.game.userID, position.x, position.y, position.z))
             }
         } else if (packet is PeerMovePlayerPacket) {
             if (!GameScene.game.enemyInitialized) return
