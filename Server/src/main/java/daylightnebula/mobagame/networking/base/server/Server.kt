@@ -51,18 +51,6 @@ class Server {
         }
     }
 
-    /*class ClientListener(private val conn: Connection): Thread() {
-        override fun run() {
-            while (true) {
-                val obj = conn.inStream.readObject()
-
-                if (obj is ServerPacket)
-                    server.processPacket(conn, obj)
-                else
-                    println("Unknown packet $obj")
-            }
-        }
-    }*/
     class ClientConnector: Thread() {
         override fun run() {
             while (true) {
