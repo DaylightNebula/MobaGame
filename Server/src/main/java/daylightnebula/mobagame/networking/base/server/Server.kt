@@ -16,7 +16,7 @@ class Server {
     }
 
     // match stuff
-    val playersPerMatch = 1
+    val playersPerMatch = 2
     val queues = hashMapOf<MatchType, MutableList<Connection>>()
     val activeMatches = mutableListOf<Match>()
 
@@ -49,7 +49,7 @@ class Server {
                     // remove the connection from the queue list and add it to the matches' connection list
                     for (i in 0 until playersPerMatch) {
                         val conn = list.removeAt(i)
-                        match.connections.add(conn)
+                        match.players.add(Match.MatchPlayer(conn))
                     }
 
                     // start the match

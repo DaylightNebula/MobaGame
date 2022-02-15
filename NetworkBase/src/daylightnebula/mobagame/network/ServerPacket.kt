@@ -12,14 +12,16 @@ class QueueResponse(val success: Boolean): ServerPacket("QueueResponse")
 
 // match packets
 class JoinMatchPacket(val matchID: Long, val matchType: MatchType, val users: List<Long>): ServerPacket("JoinMatchPacket")
-class ForceLeavePacket(val matchID: Long, val userID: Long, val reason: String): ServerPacket("ForceLeavePacket")
-class TimeLeftPacket(val timeLeft: Int): ServerPacket("TimeLeftPacket")
+class ForceLeavePacket(matchID: Long, userID: Long, val reason: String): MatchPacket("ForceLeavePacket", matchID, userID)
+class TimeLeftPacket(matchID: Long, userID: Long, val timeLeft: Int): MatchPacket("TimeLeftPacket", matchID, userID)
+class EndMatchPacket(matchID: Long, userID: Long, val sortedPlayers: List<Long>): MatchPacket("EndMatchPacket", matchID, userID)
 
 // round packets
 open class MatchPacket(name: String, val matchID: Long, val userID: Long): ServerPacket(name)
-class ConnectToOpponentPacket(matchID: Long, userID: Long, val address: String, val port: Int): MatchPacket("ConnectToOpponentPacket", matchID, userID)
+class ConnectToOpponentPacket(matchID: Long, yourUserID: Long, val theirUserID: Long, val address: String, val port: Int): MatchPacket("ConnectToOpponentPacket", matchID, yourUserID)
 class StartRoundPacket(matchID: Long, userID: Long): MatchPacket("StartRoundPacket", matchID, userID)
-class RoundEndPacket(matchID: Long, userID: Long, val winner: Long, val loser: Long): MatchPacket("RoundEndPacket", matchID, userID)
+class RoundEndPacket(matchID: Long, userID: Long): MatchPacket("RoundEndPacket", matchID, userID)
+class WhoWonPacket(matchID: Long, userID: Long, val winner: Long, val loser: Long): MatchPacket("WhoWonPacket", matchID, userID)
 
 // I packets
 class IDiedPacket(matchID: Long, userID: Long): MatchPacket("IDiedPacket", matchID, userID)

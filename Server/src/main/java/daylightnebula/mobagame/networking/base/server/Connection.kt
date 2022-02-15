@@ -26,4 +26,8 @@ class Connection(val userID: Long, val socket: Socket, val inStream: ObjectInput
         val packet = inStream.readObject()
         return if (packet is ServerPacket) packet else null
     }
+
+    fun isConnected(): Boolean {
+        return socket.isConnected
+    }
 }
