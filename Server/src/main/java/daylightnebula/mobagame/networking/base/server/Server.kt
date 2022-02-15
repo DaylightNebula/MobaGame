@@ -10,13 +10,15 @@ import kotlin.random.Random
 class Server {
 
     companion object {
+        val playersPerMatch = 2
+        val MAX_ITEMS = 3
+
         lateinit var server: Server
         val serverSocket = ServerSocket(4456)
         val connections = mutableListOf<Connection>()
     }
 
     // match stuff
-    val playersPerMatch = 2
     val queues = hashMapOf<MatchType, MutableList<Connection>>()
     val activeMatches = mutableListOf<Match>()
 
@@ -67,7 +69,7 @@ class Server {
     fun processPacket(conn: Connection, packet: ServerPacket) {
         if (packet is MatchPacket) {
             val match = activeMatches.firstOrNull { it.matchID == packet.matchID } ?: return
-            match.processPacket(packet)
+            match.processPacket(conn, packet)
         } else if (packet is QueuePacket) {
             // when asked to join a queue, check if they can join that queue.  If they can, add them.
             if (packet.matchType.active) {

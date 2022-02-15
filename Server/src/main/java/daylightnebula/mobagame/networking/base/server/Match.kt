@@ -2,6 +2,7 @@ package daylightnebula.mobagame.networking.base.server
 
 import daylightnebula.mobagame.network.*
 import daylightnebula.mobagame.network.datatypes.MatchType
+import daylightnebula.mobagame.networking.base.server.Server.Companion.MAX_ITEMS
 
 class Match(val matchType: MatchType): Thread() {
 
@@ -134,23 +135,111 @@ class Match(val matchType: MatchType): Thread() {
         rounds++
     }
 
-    fun scoreboardAndEnd() {
-        // for each player, tell them to end match
+    private fun scoreboardAndEnd() {
+        // for each player, tell them to end match, and handle their discrepancies
         sortByKD()
         val list = players.map { it.conn.userID }
         players.forEach {
+            // packet
             it.conn.sendPacket(
                 EndMatchPacket(matchID, it.conn.userID, list)
             )
+
+            // discrepancies
+            if (it.discrepancies > 0)
+                println("User ${it.conn.userID} had ${it.discrepancies} discrepancies")
         }
     }
 
-    fun sortByKD() {
+    private fun sortByKD() {
         players.sortByDescending { it.wins / rounds }
     }
 
-    fun processPacket(matchPacket: MatchPacket) {
-        // TODO packets
+    // TODO discrepancy checks
+    // TODO death checks
+    // TODO move and jump checks
+    // TODO damage range checking
+
+    fun processPacket(connection: Connection, packet: MatchPacket) {
+        if (packet is IDiedPacket) {
+            // get winner and loser
+            val loser = players.firstOrNull { it.conn.userID == packet.userID } ?: run {
+                players.first { it.conn == connection }.discrepancies++
+                return
+            }
+            val roundEntry = currentRounds.firstOrNull { it.first == loser || it.second == loser } ?: run {
+                players.first { it.conn == connection }.discrepancies++
+                return
+            }
+            val winner = if (roundEntry.first == loser) roundEntry.second else roundEntry.first
+
+            // send packets
+            winner.conn.sendPacket(
+                WhoWonPacket(matchID, winner.conn.userID, winner.conn.userID, loser.conn.userID)
+            )
+            loser.conn.sendPacket(
+                WhoWonPacket(matchID, loser.conn.userID, winner.conn.userID, loser.conn.userID)
+            )
+
+            // update wins
+            winner.wins++
+
+            // update round entry
+            val newEntry = roundEntry.copy(third = false)
+            currentRounds.remove(roundEntry)
+            currentRounds.add(newEntry)
+        } else if (packet is ISelectItemPacket) {
+            // check if the player can select that item and update vars
+            val player = players.firstOrNull { it.conn.userID == packet.userID } ?: run {
+                players.first { it.conn == connection }.discrepancies++
+                return
+            }
+            if (!player.items.contains(packet.itemID))
+                player.discrepancies++
+            player.currentItem = packet.itemID
+        } else if (packet is IUseItemPacket) {
+            // check if the player can use this item
+            val player = players.firstOrNull { it.conn.userID == packet.userID } ?: run {
+                players.first { it.conn == connection }.discrepancies++
+                return
+            }
+            if (player.currentItem != packet.itemID)
+                player.discrepancies++
+        } else if (packet is IDealDamagePacket) {
+            // update damage
+            val target = players.firstOrNull { it.conn.userID == packet.target } ?: run {
+                players.first { it.conn == connection }.discrepancies++
+                return
+            }
+            target.damageTaken += packet.damage
+        } else if (packet is ITakeDamagePacket) {
+            // update damage
+            val target = players.first { it.conn == connection }
+            target.damageTaken += packet.damage
+        } else if (packet is IMovePacket) {
+            // update position
+            val player = players.first { it.conn == connection }
+            player.xPos = packet.xPos
+            player.yPos = packet.yPos
+            player.zPos = packet.zPos
+        } else if (packet is IRotationPacket) {
+            // update rotation
+            val player = players.first { it.conn == connection }
+            player.yaw = packet.yaw
+            player.pitch = packet.pitch
+            player.roll = packet.roll
+        } else if (packet is IBuyItemPacket) {
+            // update item
+            val player = players.first { it.conn == connection }
+            if (player.items.size >= MAX_ITEMS)
+                player.discrepancies++
+            player.items.add(packet.itemID)
+        } else if (packet is IUpgradeItemPacket) {
+            val player = players.first { it.conn == connection }
+            if (!player.items.contains(packet.itemID))
+                player.discrepancies++
+            // todo item upgrade functionality
+        }
     }
 
     enum class MatchState {
@@ -163,5 +252,15 @@ class Match(val matchType: MatchType): Thread() {
         CLOSED
     }
 
-    class MatchPlayer(val conn: Connection, var wins: Int = 0, var damageTaken: Float = 0f, var damageRecorded: Float = 0f)
+    class MatchPlayer(
+        val conn: Connection,
+        var wins: Int = 0,
+        var damageTaken: Float = 0f,
+        var damageRecorded: Float = 0f,
+        var discrepancies: Int = 0,
+        val items: MutableList<Int> = mutableListOf(),
+        var currentItem: Int = 0,
+        var xPos: Float = 0f, var yPos: Float = 0f, var zPos: Float = 0f,
+        var yaw: Float = 0f, var pitch: Float = 0f, var roll: Float = 0f
+    )
 }
