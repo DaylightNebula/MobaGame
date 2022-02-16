@@ -1,6 +1,7 @@
 package daylightnebula.mobagamegdx
 
 import com.badlogic.gdx.ApplicationListener
+import com.badlogic.gdx.Gdx
 import daylightnebula.mobagamegdx.managers.ModelManager
 import daylightnebula.mobagamegdx.networking.server.ServerConnection
 import daylightnebula.mobagamegdx.scenes.GameScene
