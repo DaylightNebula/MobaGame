@@ -13,9 +13,10 @@ class MobaGame: ApplicationListener {
 
     companion object {
         lateinit var game: MobaGame
-    }
 
-    var userID by Delegates.notNull<Long>()
+        var userID by Delegates.notNull<Long>()
+        var matchID by Delegates.notNull<Long>()
+    }
 
     lateinit var currentScene: Scene
     lateinit var connection: ServerConnection

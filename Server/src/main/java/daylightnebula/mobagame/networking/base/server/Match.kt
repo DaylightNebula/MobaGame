@@ -61,6 +61,13 @@ class Match(val matchType: MatchType): Thread() {
             // update current state time left
             timeLeft--
 
+            // send time left packet
+            players.forEach {
+                it.conn.sendPacket(
+                    TimeLeftPacket(matchID, it.conn.userID, timeLeft)
+                )
+            }
+
             // make tick 1000 ms long
             val end = System.currentTimeMillis()
             val diff = end - start
@@ -152,7 +159,7 @@ class Match(val matchType: MatchType): Thread() {
     }
 
     private fun sortByKD() {
-        players.sortByDescending { it.wins / rounds }
+        if (rounds > 0) players.sortByDescending { it.wins / rounds }
     }
 
     // TODO discrepancy checks

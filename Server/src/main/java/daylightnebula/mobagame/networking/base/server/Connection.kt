@@ -12,7 +12,7 @@ class Connection(val userID: Long, val socket: Socket, val inStream: ObjectInput
     }
 
     override fun run() {
-        while (true) {
+        while (socket.isConnected) {
             val obj = inStream.readObject()
 
             if (obj is ServerPacket)

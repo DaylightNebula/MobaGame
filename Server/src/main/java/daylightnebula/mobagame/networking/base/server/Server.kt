@@ -50,7 +50,7 @@ class Server {
 
                     // remove the connection from the queue list and add it to the matches' connection list
                     for (i in 0 until playersPerMatch) {
-                        val conn = list.removeAt(i)
+                        val conn = list.removeAt(0)
                         match.players.add(Match.MatchPlayer(conn))
                     }
 

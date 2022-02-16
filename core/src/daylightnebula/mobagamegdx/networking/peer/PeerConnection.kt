@@ -42,7 +42,7 @@ class PeerConnection(val address: String, val port: Int): Thread() {
         // send test packet if client
         if (isClient()) {
             val position = GameScene.game.myPlayer.modelInstance.transform.getTranslation(Vector3())
-            sendPacket(PeerInitPlayerPacket(MobaGame.game.userID, position.x, position.y, position.z))
+            sendPacket(PeerInitPlayerPacket(MobaGame.userID, position.x, position.y, position.z))
         }
         ready = true
 
@@ -89,7 +89,7 @@ class PeerConnection(val address: String, val port: Int): Thread() {
 
             if (isServer()) {
                 val position = GameScene.game.myPlayer.modelInstance.transform.getTranslation(Vector3())
-                sendPacket(PeerInitPlayerPacket(MobaGame.game.userID, position.x, position.y, position.z))
+                sendPacket(PeerInitPlayerPacket(MobaGame.userID, position.x, position.y, position.z))
             }
         } else if (packet is PeerMovePlayerPacket) {
             if (!GameScene.game.enemyInitialized) return
