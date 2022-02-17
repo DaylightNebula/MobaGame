@@ -11,13 +11,14 @@ class QueuePacket(val matchType: MatchType): ServerPacket("QueuePacket")
 class QueueResponse(val success: Boolean): ServerPacket("QueueResponse")
 
 // match packets
+open class MatchPacket(name: String, val matchID: Long, val userID: Long): ServerPacket(name)
 class JoinMatchPacket(val matchID: Long, val matchType: MatchType, val users: List<Long>): ServerPacket("JoinMatchPacket")
 class ForceLeavePacket(matchID: Long, userID: Long, val reason: String): MatchPacket("ForceLeavePacket", matchID, userID)
 class TimeLeftPacket(matchID: Long, userID: Long, val timeLeft: Int): MatchPacket("TimeLeftPacket", matchID, userID)
+class ProceedToItemSelectPacket(matchID: Long, userID: Long, val classMap: HashMap<Long, Int>): MatchPacket("ProceedToItemSelectPacket", matchID, userID)
 class EndMatchPacket(matchID: Long, userID: Long, val sortedPlayers: List<Long>): MatchPacket("EndMatchPacket", matchID, userID)
 
 // round packets
-open class MatchPacket(name: String, val matchID: Long, val userID: Long): ServerPacket(name)
 class ConnectToOpponentPacket(matchID: Long, yourUserID: Long, val theirUserID: Long, val address: String, val port: Int): MatchPacket("ConnectToOpponentPacket", matchID, yourUserID)
 class StartRoundPacket(matchID: Long, userID: Long): MatchPacket("StartRoundPacket", matchID, userID)
 class RoundEndPacket(matchID: Long, userID: Long): MatchPacket("RoundEndPacket", matchID, userID)
@@ -33,6 +34,7 @@ class IMovePacket(matchID: Long, userID: Long, val xPos: Float, val yPos: Float,
 class IRotationPacket(matchID: Long, userID: Long, val roll: Float, val pitch: Float, val yaw: Float): MatchPacket("IRotationPacket", matchID, userID)
 class IJumpPacket(matchID: Long, userID: Long): MatchPacket("IJumpPacket", matchID, userID)
 class ILeaveMatchPacket(matchID: Long, userID: Long): MatchPacket("ILeaveMatchPacket", matchID, userID)
+class ISelectClassPacket(matchID: Long, userID: Long, val classID: Int): MatchPacket("ISelectClassPacket", matchID, userID)
 class IBuyItemPacket(matchID: Long, userID: Long, val itemID: Int): MatchPacket("IBuyItemPacket", matchID, userID)
 class IUpgradeItemPacket(matchID: Long, userID: Long, val itemID: Int): MatchPacket("IUpgradeItemPacket", matchID, userID)
 class IReadyPacket(matchID: Long, userID: Long): MatchPacket("IReadyPacket", matchID, userID)

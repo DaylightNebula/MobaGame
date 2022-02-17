@@ -25,7 +25,7 @@ class Match(val matchType: MatchType): Thread() {
     val currentRounds = mutableListOf<Triple<MatchPlayer, MatchPlayer, Boolean>>() // player 1, player 2, active?
 
     // state stuff
-    var matchState = MatchState.SETUP
+    var matchState = MatchState.CLASS_SELECTION
     var timeLeft = selectLength
     var rounds = 0
 
@@ -48,7 +48,8 @@ class Match(val matchType: MatchType): Thread() {
             // check if the state needs to be updated
             if (timeLeft <= 0) {
                 when (matchState) {
-                    MatchState.SETUP -> startRound(0)
+                    MatchState.CLASS_SELECTION -> proceedToItemSelect()
+                    MatchState.ITEM_SELECTION -> startRound(0)
                     MatchState.ROUND_1 -> endRound()
                     MatchState.UPDATE_1 -> startRound(1)
                     MatchState.ROUND_2 -> endRound()
@@ -77,6 +78,22 @@ class Match(val matchType: MatchType): Thread() {
                 else
                     sleep(1000 - diff)
             }
+        }
+    }
+
+    private fun proceedToItemSelect() {
+        // build class select hash map
+        val classMap = HashMap<Long, Int>()
+        players.forEach {
+            if (it.classID == -1) it.classID = 0 // todo select random class
+            classMap[it.conn.userID] = it.classID
+        }
+
+        // send class map to each player
+        players.forEach {
+            it.conn.sendPacket(ProceedToItemSelectPacket(
+                matchID, it.conn.userID, classMap
+            ))
         }
     }
 
@@ -246,11 +263,16 @@ class Match(val matchType: MatchType): Thread() {
             if (!player.items.contains(packet.itemID))
                 player.discrepancies++
             // todo item upgrade functionality
+        } else if (packet is ISelectClassPacket) {
+            val player = players.first { it.conn == connection }
+            player.classID = packet.classID
+            // todo check if valid class
         }
     }
 
     enum class MatchState {
-        SETUP,
+        CLASS_SELECTION,
+        ITEM_SELECTION,
         ROUND_1,
         UPDATE_1,
         ROUND_2,
@@ -265,6 +287,7 @@ class Match(val matchType: MatchType): Thread() {
         var damageTaken: Float = 0f,
         var damageRecorded: Float = 0f,
         var discrepancies: Int = 0,
+        var classID: Int = -1,
         val items: MutableList<Int> = mutableListOf(),
         var currentItem: Int = 0,
         var xPos: Float = 0f, var yPos: Float = 0f, var zPos: Float = 0f,
