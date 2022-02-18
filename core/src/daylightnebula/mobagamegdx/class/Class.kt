@@ -3,6 +3,11 @@ package daylightnebula.mobagamegdx.`class`
 abstract class Class(val name: String, val classID: Int, val primeItems: List<Int>, val secondItems: List<Int>, val armorItems: List<Int>) {
     companion object {
         val list = mutableListOf<Class>()
+        val ranger = RangerClass()
+        val fighter = FighterClass()
+        val assassin = AssassinClass()
+        val tank = TankClass()
+        val specialist = SpecialistClass()
     }
 
     init {

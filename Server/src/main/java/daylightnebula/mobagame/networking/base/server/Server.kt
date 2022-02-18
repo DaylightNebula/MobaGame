@@ -10,7 +10,7 @@ import kotlin.random.Random
 class Server {
 
     companion object {
-        val playersPerMatch = 2
+        val playersPerMatch = 1
         val MAX_ITEMS = 3
 
         lateinit var server: Server

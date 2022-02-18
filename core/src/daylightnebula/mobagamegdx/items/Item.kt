@@ -2,7 +2,7 @@ package daylightnebula.mobagamegdx.items
 
 import daylightnebula.mobagamegdx.players.Player
 
-abstract class Item(val id: Int) {
+abstract class Item(val id: Int, val name: String) {
     companion object {
         // list stuffs
         var id = 0

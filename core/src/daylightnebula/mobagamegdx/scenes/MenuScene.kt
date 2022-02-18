@@ -92,7 +92,7 @@ class MenuScene: Scene() {
         } else if (serverPacket is JoinMatchPacket) {
             println("Joined match ${serverPacket.matchID}")
             MobaGame.matchID = serverPacket.matchID
-            MobaGame.game.changeScene(ItemSelectionScene())
+            MobaGame.game.changeScene(ClassSelectionScene())
             return true
         } else
             return false

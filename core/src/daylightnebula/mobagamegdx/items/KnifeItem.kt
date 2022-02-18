@@ -11,7 +11,7 @@ import daylightnebula.mobagamegdx.players.MyPlayer
 import daylightnebula.mobagamegdx.players.Player
 import daylightnebula.mobagamegdx.scenes.GameScene
 
-class KnifeItem(id: Int): Item(id) {
+class KnifeItem(id: Int): Item(id, "Knife") {
     override fun applyItem(player: Player, level: Int) {
         Gdx.app.postRunnable {
             player.attachedGameObjects.add(
