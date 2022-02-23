@@ -20,7 +20,7 @@ class ProceedToItemSelectPacket(matchID: Long, userID: Long, val classMap: HashM
 class EndMatchPacket(matchID: Long, userID: Long, val sortedPlayers: List<Long>): MatchPacket("EndMatchPacket", matchID, userID)
 
 // round packets
-class ConnectToOpponentPacket(matchID: Long, yourUserID: Long, val theirUserID: Long, val address: String, val port: Int): MatchPacket("ConnectToOpponentPacket", matchID, yourUserID)
+class ConnectToOpponentPacket(matchID: Long, yourUserID: Long, val theirUserID: Long, val address: String, val port: Int, val isServer: Boolean): MatchPacket("ConnectToOpponentPacket", matchID, yourUserID)
 class StartRoundPacket(matchID: Long, userID: Long): MatchPacket("StartRoundPacket", matchID, userID)
 class RoundEndPacket(matchID: Long, userID: Long): MatchPacket("RoundEndPacket", matchID, userID)
 class WhoWonPacket(matchID: Long, userID: Long, val winner: Long, val loser: Long): MatchPacket("WhoWonPacket", matchID, userID)

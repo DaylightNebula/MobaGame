@@ -133,12 +133,12 @@ class Match(val matchType: MatchType): Thread() {
             // tell them to connect to each other
             p1.conn.sendPacket(
                 ConnectToOpponentPacket(
-                    matchID, p1.conn.userID, p2.conn.userID, p2.conn.socket.inetAddress.hostAddress, p2.conn.socket.port
+                    matchID, p1.conn.userID, p2.conn.userID, p2.conn.socket.inetAddress.hostAddress, p2.conn.socket.port, true
                 )
             )
             p2.conn.sendPacket(
                 ConnectToOpponentPacket(
-                    matchID, p2.conn.userID, p1.conn.userID, p1.conn.socket.inetAddress.hostAddress, p2.conn.socket.port
+                    matchID, p2.conn.userID, p1.conn.userID, p1.conn.socket.inetAddress.hostAddress, p2.conn.socket.port, false
                 )
             )
 

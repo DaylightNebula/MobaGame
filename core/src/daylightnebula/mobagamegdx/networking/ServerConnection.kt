@@ -1,4 +1,4 @@
-package daylightnebula.mobagamegdx.networking.server
+package daylightnebula.mobagamegdx.networking
 
 import daylightnebula.mobagame.network.ServerPacket
 import daylightnebula.mobagamegdx.MobaGame

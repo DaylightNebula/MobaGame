@@ -223,7 +223,7 @@ class ItemSelectionScene: Scene() {
     override fun processServerPacket(serverPacket: ServerPacket): Boolean {
         if (serverPacket is ConnectToOpponentPacket) {
             Gdx.app.postRunnable {
-                MobaGame.game.changeScene(GameScene(serverPacket.address, serverPacket.port))
+                MobaGame.game.changeScene(GameScene(if (serverPacket.isServer) "" else serverPacket.address, serverPacket.port))
             }
             return true
         } else if (serverPacket is TimeLeftPacket) {

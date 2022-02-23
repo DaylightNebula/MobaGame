@@ -3,7 +3,7 @@ package daylightnebula.mobagamegdx
 import com.badlogic.gdx.ApplicationListener
 import com.badlogic.gdx.Gdx
 import daylightnebula.mobagamegdx.managers.ModelManager
-import daylightnebula.mobagamegdx.networking.server.ServerConnection
+import daylightnebula.mobagamegdx.networking.ServerConnection
 import daylightnebula.mobagamegdx.scenes.GameScene
 import daylightnebula.mobagamegdx.scenes.MenuScene
 import daylightnebula.mobagamegdx.scenes.Scene
