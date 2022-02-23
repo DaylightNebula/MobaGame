@@ -5,6 +5,7 @@ import java.io.Serializable
 
 open class ServerPacket(val name: String): Serializable { val timeSent = System.currentTimeMillis() }
 class LoginPacket(val userID: Long, val allowed: Boolean): ServerPacket("LoginPacket")
+class TestPacket(val userID: Long): ServerPacket("TestPacket")
 
 // queue packets
 class QueuePacket(val matchType: MatchType): ServerPacket("QueuePacket")
@@ -35,6 +36,6 @@ class IRotationPacket(matchID: Long, userID: Long, val roll: Float, val pitch: F
 class IJumpPacket(matchID: Long, userID: Long): MatchPacket("IJumpPacket", matchID, userID)
 class ILeaveMatchPacket(matchID: Long, userID: Long): MatchPacket("ILeaveMatchPacket", matchID, userID)
 class ISelectClassPacket(matchID: Long, userID: Long, val classID: Int): MatchPacket("ISelectClassPacket", matchID, userID)
-class IBuyItemPacket(matchID: Long, userID: Long, val itemID: Int): MatchPacket("IBuyItemPacket", matchID, userID)
+class IBuyItemPacket(matchID: Long, userID: Long, val itemID: Int, val itemSlot : Int): MatchPacket("IBuyItemPacket", matchID, userID)
 class IUpgradeItemPacket(matchID: Long, userID: Long, val itemID: Int): MatchPacket("IUpgradeItemPacket", matchID, userID)
 class IReadyPacket(matchID: Long, userID: Long): MatchPacket("IReadyPacket", matchID, userID)

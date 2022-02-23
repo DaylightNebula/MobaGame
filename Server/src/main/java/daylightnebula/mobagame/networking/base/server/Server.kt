@@ -10,7 +10,7 @@ import kotlin.random.Random
 class Server {
 
     companion object {
-        val playersPerMatch = 1
+        val playersPerMatch = 2
         val MAX_ITEMS = 3
 
         lateinit var server: Server
@@ -34,6 +34,9 @@ class Server {
         }
 
         while (true) {
+            // remove all match connections if they are not connected
+            connections.removeIf { !it.open }
+
             // remove all matches that are closed from active
             activeMatches.removeIf { it.matchState == Match.MatchState.CLOSED }
 

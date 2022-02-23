@@ -2,6 +2,7 @@ package daylightnebula.mobagame.networking.base.server
 
 import daylightnebula.mobagame.network.*
 import daylightnebula.mobagame.network.datatypes.MatchType
+import daylightnebula.mobagame.network.playerstuffs.GameClass
 import daylightnebula.mobagame.networking.base.server.Server.Companion.MAX_ITEMS
 
 class Match(val matchType: MatchType): Thread() {
@@ -10,6 +11,7 @@ class Match(val matchType: MatchType): Thread() {
         private var currentID = 0L // todo load last match id from the database and add 1
 
         const val roundLength = 160
+        const val classSelectLength = 20
         const val selectLength = 45
         const val updateLength = 20
 
@@ -20,14 +22,15 @@ class Match(val matchType: MatchType): Thread() {
     }
 
     // user stuff
-    val matchID = Match.getID()
+    val matchID = getID()
     val players = mutableListOf<MatchPlayer>()
     val currentRounds = mutableListOf<Triple<MatchPlayer, MatchPlayer, Boolean>>() // player 1, player 2, active?
 
     // state stuff
     var matchState = MatchState.CLASS_SELECTION
-    var timeLeft = selectLength
+    var timeLeft = classSelectLength
     var rounds = 0
+    val ready = mutableListOf<Long>()
 
     override fun run() {
         // send join packets
@@ -45,8 +48,17 @@ class Match(val matchType: MatchType): Thread() {
             // record the start time
             val start = System.currentTimeMillis()
 
+            // check if ready
+            println("Ready check ${ready.size} ${players.size}")
+            if (ready.size == players.size) {
+                println("Ready")
+                timeLeft = 0
+                ready.clear()
+            }
+
             // check if the state needs to be updated
             if (timeLeft <= 0) {
+                println("Updated match state")
                 when (matchState) {
                     MatchState.CLASS_SELECTION -> proceedToItemSelect()
                     MatchState.ITEM_SELECTION -> startRound(0)
@@ -85,7 +97,7 @@ class Match(val matchType: MatchType): Thread() {
         // build class select hash map
         val classMap = HashMap<Long, Int>()
         players.forEach {
-            if (it.classID == -1) it.classID = 0 // todo select random class
+            if (it.classID == -1) it.classID = GameClass.list.random().classID
             classMap[it.conn.userID] = it.classID
         }
 
@@ -95,9 +107,14 @@ class Match(val matchType: MatchType): Thread() {
                 matchID, it.conn.userID, classMap
             ))
         }
+
+        matchState = MatchState.ITEM_SELECTION
+        timeLeft = selectLength
     }
 
     private fun startRound(round: Int) {
+        timeLeft = roundLength
+
         // prepare to send players to their matches
         sortByKD()
 
@@ -218,7 +235,7 @@ class Match(val matchType: MatchType): Thread() {
                 players.first { it.conn == connection }.discrepancies++
                 return
             }
-            if (!player.items.contains(packet.itemID))
+            if (player.primeItem != packet.itemID && player.secondItem != packet.itemID && player.armorItem != packet.itemID)
                 player.discrepancies++
             player.currentItem = packet.itemID
         } else if (packet is IUseItemPacket) {
@@ -255,18 +272,35 @@ class Match(val matchType: MatchType): Thread() {
         } else if (packet is IBuyItemPacket) {
             // update item
             val player = players.first { it.conn == connection }
-            if (player.items.size >= MAX_ITEMS)
+            if (packet.itemSlot !in 0..2)
                 player.discrepancies++
-            player.items.add(packet.itemID)
+            else if (packet.itemSlot == 0)
+                player.primeItem = packet.itemID
+            else if (packet.itemSlot == 1)
+                player.secondItem = packet.itemID
+            else if (packet.itemSlot == 2)
+                player.armorItem = packet.itemID
         } else if (packet is IUpgradeItemPacket) {
             val player = players.first { it.conn == connection }
-            if (!player.items.contains(packet.itemID))
+            if (player.primeItem != packet.itemID && player.secondItem != packet.itemID && player.armorItem != packet.itemID)
                 player.discrepancies++
             // todo item upgrade functionality
         } else if (packet is ISelectClassPacket) {
-            val player = players.first { it.conn == connection }
-            player.classID = packet.classID
-            // todo check if valid class
+            println("Checking connections ${players.size}")
+            val player = players.first {
+                println("${it.conn} $connection")
+                it.conn == connection
+            }
+            if (GameClass.list.any { it.classID == packet.classID })
+                player.classID = packet.classID
+            else {
+                player.discrepancies++
+                player.classID = GameClass.list.random().classID
+            }
+        } else if (packet is IReadyPacket) {
+            val playerID = players.first { it.conn == connection }.conn.userID
+            if (!ready.contains(playerID))
+                ready.add(playerID)
         }
     }
 
@@ -288,7 +322,9 @@ class Match(val matchType: MatchType): Thread() {
         var damageRecorded: Float = 0f,
         var discrepancies: Int = 0,
         var classID: Int = -1,
-        val items: MutableList<Int> = mutableListOf(),
+        var primeItem: Int = -1,
+        var secondItem: Int = -1,
+        var armorItem: Int = -1,
         var currentItem: Int = 0,
         var xPos: Float = 0f, var yPos: Float = 0f, var zPos: Float = 0f,
         var yaw: Float = 0f, var pitch: Float = 0f, var roll: Float = 0f

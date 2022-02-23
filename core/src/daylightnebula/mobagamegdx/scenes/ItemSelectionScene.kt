@@ -4,29 +4,41 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.TextArea
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.TextField
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
-import daylightnebula.mobagame.network.ConnectToOpponentPacket
-import daylightnebula.mobagame.network.IBuyItemPacket
-import daylightnebula.mobagame.network.ServerPacket
-import daylightnebula.mobagame.network.TimeLeftPacket
-import daylightnebula.mobagame.network.datatypes.MatchType
+import com.badlogic.gdx.utils.Align
+import daylightnebula.mobagame.network.*
+import daylightnebula.mobagame.network.playerstuffs.GameClass
 import daylightnebula.mobagamegdx.MobaGame
+import daylightnebula.mobagamegdx.items.Item
 
 class ItemSelectionScene: Scene() {
 
-    lateinit var stage: Stage
-    lateinit var timeText: TextArea
-    lateinit var timeTextStyle: TextField.TextFieldStyle
-    lateinit var textButton: TextButton
-    lateinit var textButtonStyle: TextButton.TextButtonStyle
-    lateinit var font: BitmapFont
+    private lateinit var stage: Stage
+    private lateinit var font: BitmapFont
 
-    var timeLeft = 45
+    // labels
+    private lateinit var timeLabel: TextField
+    private lateinit var primeLabel: TextField
+    private lateinit var secondLabel: TextField
+    private lateinit var armorLabel: TextField
+
+    // styles
+    private lateinit var labelStyle: TextField.TextFieldStyle
+    private lateinit var notSelectedStyle: TextButton.TextButtonStyle
+    private lateinit var selectedStyle: TextButton.TextButtonStyle
+    private lateinit var readyStyle: TextButton.TextButtonStyle
+
+    // buttons
+    private lateinit var readyButton: TextButton
+    private val primeButtons = mutableListOf<TextButton>()
+    private val secondButtons = mutableListOf<TextButton>()
+    private val armorButtons = mutableListOf<TextButton>()
+
+    private var timeLeft = 45
+    private var isReady = false
 
     override fun create() {
         // in opengl context
@@ -35,27 +47,164 @@ class ItemSelectionScene: Scene() {
             stage = Stage()
             Gdx.input.inputProcessor = stage
             font = BitmapFont()
-            textButtonStyle = TextButton.TextButtonStyle()
-            textButtonStyle.font = font
-            textButton = TextButton("Buy Knife", textButtonStyle)
-            timeTextStyle = TextField.TextFieldStyle(font, Color(0.2f, 0.2f, 1f, 1f), null, null, null)
-            timeText = TextArea(timeLeft.toString(), timeTextStyle)
-            timeText.setPosition(100f, 100f)
-            stage.addActor(textButton)
-            stage.addActor(timeText)
 
-            // button listeners
-            textButton.addListener(object : ChangeListener() {
-                override fun changed(event: ChangeEvent?, actor: Actor?) {
+            // create styles
+            labelStyle = TextField.TextFieldStyle(font, Color(1f, 1f, 1f, 1f), null, null, null)
+            notSelectedStyle = TextButton.TextButtonStyle()
+            notSelectedStyle.font = font
+            notSelectedStyle.fontColor = Color(0.75f, 0.75f, 0.75f, 1f)
+            selectedStyle = TextButton.TextButtonStyle()
+            selectedStyle.font = font
+            selectedStyle.fontColor = Color(0.7f, 1f, 0.7f, 1f)
+            readyStyle = TextButton.TextButtonStyle()
+            readyStyle.font = font
+            readyStyle.fontColor = Color(1f, 0.7f, 0.7f, 1f)
+
+            // create labels
+            timeLabel = TextField(timeLeft.toString(), labelStyle)
+            primeLabel = TextField("Primary Items", labelStyle)
+            secondLabel = TextField("Secondary Items", labelStyle)
+            armorLabel = TextField("Armor Items", labelStyle)
+            stage.addActor(timeLabel)
+            stage.addActor(primeLabel)
+            stage.addActor(secondLabel)
+            stage.addActor(armorLabel)
+
+            // create ready button
+            readyButton = TextButton("Ready", notSelectedStyle)
+            readyButton.addListener {
+                if (it !is ChangeListener.ChangeEvent) return@addListener true
+                if (!isReady && MobaGame.primeItem != -1 && MobaGame.secondItem != -1 && MobaGame.armorItem != -1) {
+                    readyButton.style = readyStyle
                     MobaGame.game.connection.sendPacket(
-                        IBuyItemPacket(MobaGame.matchID, MobaGame.userID, 0)
+                        IReadyPacket(MobaGame.matchID, MobaGame.userID)
                     )
+                    isReady = true
                 }
-            })
+                true
+            }
+            stage.addActor(readyButton)
+
+            // create buttons
+            val myClass = GameClass.list.firstOrNull { it.classID == MobaGame.currentClass }
+            println("My class ${myClass?.name ?: "null"}")
+            myClass?.primeItems?.forEach { itemID ->
+                val item = Item.items.firstOrNull { it.id == itemID }
+                println("Item found ${item?.name ?: "null"}")
+                if (item != null) {
+                    val button = TextButton(item.name, notSelectedStyle)
+                    primeButtons.add(button)
+                    button.addListener {
+                        if (it !is ChangeListener.ChangeEvent) return@addListener true
+                        // reset last class if another was selected before
+                        if (MobaGame.primeItem != -1)
+                            primeButtons[MobaGame.primeItem].style = notSelectedStyle
+
+                        // set style
+                        MobaGame.primeItem = item.id
+                        button.style = selectedStyle
+
+                        // send packet
+                        MobaGame.game.connection.sendPacket(
+                            IBuyItemPacket(MobaGame.matchID, MobaGame.userID, item.id, 0)
+                        )
+
+                        true
+                    }
+                    stage.addActor(button)
+                }
+            }
+            myClass?.secondItems?.forEach { itemID ->
+                val item = Item.items.firstOrNull { it.id == itemID }
+                if (item != null) {
+                    val button = TextButton(item.name, notSelectedStyle)
+                    secondButtons.add(button)
+                    button.addListener {
+                        if (it !is ChangeListener.ChangeEvent) return@addListener true
+                        // reset last class if another was selected before
+                        if (MobaGame.secondItem != -1)
+                            secondButtons[MobaGame.secondItem].style = notSelectedStyle
+
+                        // set style
+                        MobaGame.secondItem = item.id
+                        button.style = selectedStyle
+
+                        // send packet
+                        MobaGame.game.connection.sendPacket(
+                            IBuyItemPacket(MobaGame.matchID, MobaGame.userID, item.id, 1)
+                        )
+
+                        true
+                    }
+                    stage.addActor(button)
+                }
+            }
+            myClass?.armorItems?.forEach { itemID ->
+                val item = Item.items.firstOrNull { it.id == itemID }
+                if (item != null) {
+                    val button = TextButton(item.name, notSelectedStyle)
+                    armorButtons.add(button)
+                    button.addListener {
+                        if (it !is ChangeListener.ChangeEvent) return@addListener true
+                        // reset last class if another was selected before
+                        if (MobaGame.armorItem != -1)
+                            armorButtons[MobaGame.armorItem].style = notSelectedStyle
+
+                        // set style
+                        MobaGame.armorItem = item.id
+                        button.style = selectedStyle
+
+                        // send packet
+                        MobaGame.game.connection.sendPacket(
+                            IBuyItemPacket(MobaGame.matchID, MobaGame.userID, item.id, 2)
+                        )
+
+                        true
+                    }
+                    stage.addActor(button)
+                }
+            }
+
+            // finalize
+            positionUI(Gdx.graphics.width, Gdx.graphics.height)
         }
     }
 
-    override fun resize(width: Int, height: Int) {}
+    private fun positionUI(width: Int, height: Int) {
+        if (!this::selectedStyle.isInitialized) return
+        timeLabel.setPosition(width / 2f, height - 20f, Align.center)
+        primeLabel.setPosition(width / 4f, height - 40f, Align.center)
+        secondLabel.setPosition(width / 2f, height - 40f, Align.center)
+        armorLabel.setPosition(width * 0.75f, height - 40f, Align.center)
+        readyButton.setPosition(width / 2f, 20f, Align.center)
+
+        // update buttons
+        primeButtons.forEachIndexed { index, button ->
+            button.setPosition(
+                width / 4f,
+                height - 60f - (20f * index),
+                Align.center
+            )
+        }
+        secondButtons.forEachIndexed { index, button ->
+            button.setPosition(
+                width / 2f,
+                height - 60f - (20f * index),
+                Align.center
+            )
+        }
+        armorButtons.forEachIndexed { index, button ->
+            button.setPosition(
+                width * 0.75f,
+                height - 60f - (20f * index),
+                Align.center
+            )
+        }
+    }
+
+    override fun resize(width: Int, height: Int) {
+        positionUI(width, height)
+    }
 
     override fun render() {
         if (!this::stage.isInitialized) return
@@ -78,8 +227,8 @@ class ItemSelectionScene: Scene() {
             }
             return true
         } else if (serverPacket is TimeLeftPacket) {
-            println("Update time to ${serverPacket.timeLeft}")
             timeLeft = serverPacket.timeLeft
+            if (this::timeLabel.isInitialized) timeLabel.text = timeLeft.toString()
             return true
         }
         return false

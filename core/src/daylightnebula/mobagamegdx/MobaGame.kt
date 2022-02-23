@@ -17,6 +17,10 @@ class MobaGame: ApplicationListener {
 
         var userID by Delegates.notNull<Long>()
         var matchID by Delegates.notNull<Long>()
+        var currentClass = -1
+        var primeItem = -1
+        var secondItem = -1
+        var armorItem = -1
     }
 
     lateinit var currentScene: Scene

@@ -29,9 +29,9 @@ class PeerConnection(val address: String, val port: Int): Thread() {
     override fun run() {
         // get connection
         try {
-            socket = Socket("localhost", port)
+            socket = Socket("localhost", port + 1)
         } catch (ex: ConnectException) {
-            serverSocket = ServerSocket(port)
+            serverSocket = ServerSocket(port + 1)
             socket = serverSocket!!.accept()
         }
 
